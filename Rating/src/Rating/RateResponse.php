@@ -58,7 +58,7 @@ class RateResponse implements ModelInterface, ArrayAccess
       */
     protected static $swaggerTypes = [
         'response' => '\UPS\Rating\Rating\RateResponseResponse',
-        'rated_shipment' => '\UPS\Rating\Rating\RateResponseRatedShipment[]'
+        'rated_shipment' => '\UPS\Rating\Rating\RateResponseRatedShipment'
     ];
 
     /**
