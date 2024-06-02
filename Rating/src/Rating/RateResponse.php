@@ -241,7 +241,7 @@ class RateResponse implements ModelInterface, ArrayAccess
     /**
      * Gets rated_shipment
      *
-     * @return \UPS\Rating\Rating\RateResponseRatedShipment[]
+     * @return \UPS\Rating\Rating\RateResponseRatedShipment
      */
     public function getRatedShipment()
     {
@@ -251,7 +251,7 @@ class RateResponse implements ModelInterface, ArrayAccess
     /**
      * Sets rated_shipment
      *
-     * @param \UPS\Rating\Rating\RateResponseRatedShipment[] $rated_shipment RatedShipment Container.  **NOTE:** For versions >= v2403, this element will always be returned as an array. For requests using versions < v2403, this element will be returned as an array if there is more than one object and a single object if there is only 1.
+     * @param \UPS\Rating\Rating\RateResponseRatedShipment $rated_shipment RatedShipment Container.  **NOTE:** For versions >= v2403, this element will always be returned as an array. For requests using versions < v2403, this element will be returned as an array if there is more than one object and a single object if there is only 1.
      *
      * @return $this
      */
