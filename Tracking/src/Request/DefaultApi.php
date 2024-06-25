@@ -349,7 +349,7 @@ class DefaultApi
             );
         }
 
-        $resourcePath = '/track/v1/details/{inquiryNumber}';
+        $resourcePath = '/track/v1/reference/details/{inquiryNumber}';
         $formParams = [];
         $queryParams = [];
         $headerParams = [];
