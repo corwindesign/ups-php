@@ -1,6 +1,6 @@
 {
     "name": "abantecart/ups-php",
-    "version": "1.1.0",
+    "version": "1.1.2",
     "description": "UPS PHP SDK based on OAuth",
     "keywords": [
         "ups",
@@ -36,9 +36,9 @@
         "ext-mbstring": "*",
         "wikimedia/composer-merge-plugin": "^2.1.0",
         "guzzlehttp/guzzle": "7.9.3",
-        "guzzlehttp/psr7": "2.7.1",
-        "symfony/process": "v7.3.0",
-        "symfony/http-client": "v7.3.1"
+        "guzzlehttp/psr7": "2.10.2",
+        "symfony/process": "v7.3.11",
+        "symfony/http-client": "v7.3.11"
     },
     "extra": {
         "merge-plugin": {
