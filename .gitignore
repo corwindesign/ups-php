@@ -1,8 +1,0 @@
-/.idea/
-/.swagger-codegen/
-/vendor/
-/composer.lock
-/build.php
-!/.idea/
-!/.swagger-codegen/
-/.swagger-codegen/VERSION
