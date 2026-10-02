@@ -298,17 +298,25 @@ class TrackingApi
                     ];
                 },
                 function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
+                    $response = method_exists($exception, 'getResponse') ? $exception->getResponse() : null;
+                    if ($response) {
+                        $statusCode = $response->getStatusCode();
+                        throw new ApiException(
+                            sprintf(
+                                '[%d] Error connecting to the API (%s)',
+                                $statusCode,
+                                method_exists($exception, 'getRequest') && $exception->getRequest() ? $exception->getRequest()->getUri() : ''
+                            ),
                             $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        $response->getBody()
+                            $response->getHeaders(),
+                            $response->getBody()
+                        );
+                    }
+                    throw new ApiException(
+                        $exception->getMessage(),
+                        (int) $exception->getCode(),
+                        null,
+                        null
                     );
                 }
             );
@@ -328,7 +336,7 @@ class TrackingApi
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Psr7\Request
      */
-    protected function getSingleTrackResponseUsingGETRequest($inquiry_number, $trans_id, $transaction_src, $locale = 'en_US', $return_signature = 'false', $return_milestones = 'false', $return_pod = 'false')
+    public function getSingleTrackResponseUsingGETRequest($inquiry_number, $trans_id, $transaction_src, $locale = 'en_US', $return_signature = 'false', $return_milestones = 'false', $return_pod = 'false')
     {
         // verify the required parameter 'inquiry_number' is set
         if ($inquiry_number === null || (is_array($inquiry_number) && count($inquiry_number) === 0)) {
@@ -411,6 +419,388 @@ class TrackingApi
             // \stdClass has no __toString(), so we should encode it manually
             if ($httpBody instanceof \stdClass && $headers['Content-Type'] === 'application/json') {
                 $httpBody = \GuzzleHttp\json_encode($httpBody);
+            }
+        } elseif (count($formParams) > 0) {
+            if ($multipart) {
+                $multipartContents = [];
+                foreach ($formParams as $formParamName => $formParamValue) {
+                    $multipartContents[] = [
+                        'name' => $formParamName,
+                        'contents' => $formParamValue
+                    ];
+                }
+                // for HTTP post (form)
+                $httpBody = new MultipartStream($multipartContents);
+
+            } elseif ($headers['Content-Type'] === 'application/json') {
+                $httpBody = \GuzzleHttp\json_encode($formParams);
+
+            } else {
+                // for HTTP post (form)
+                $httpBody = \GuzzleHttp\Psr7\Query::build($formParams);
+            }
+        }
+
+        // this endpoint requires OAuth (access token)
+        if ($this->config->getAccessToken() !== null) {
+            $headers['Authorization'] = 'Bearer ' . $this->config->getAccessToken();
+        }
+
+        $defaultHeaders = [];
+        if ($this->config->getUserAgent()) {
+            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
+        }
+
+        $headers = array_merge(
+            $defaultHeaders,
+            $headerParams,
+            $headers
+        );
+
+        $query = \GuzzleHttp\Psr7\Query::build($queryParams);
+        return new Request(
+            'GET',
+            $this->config->getHost() . $resourcePath . ($query ? "?{$query}" : ''),
+            $headers,
+            $httpBody
+        );
+    }
+
+    /**
+     * Operation getSingleTrackResponseByReferenceUsingGET
+     *
+     * Tracking by Reference Number
+     *
+     * @param  string $inquiry_number The reference number for which tracking information is requested. Each inquiry number must be between 7 and 34 characters in length. (required)
+     * @param  string $trans_id An identifier unique to the request. (required)
+     * @param  string $transaction_src Identifies the client/source application that is calling (required)
+     * @param  string $locale Language and country code of the user, separated by an underscore. Default value is 'en_US' (optional, default to en_US)
+     * @param  string $return_signature Indicator requesting that the delivery signature image be included as part of the response (by default the image will not be returned). Returns image bytecodes of the signature. (optional, default to false)
+     * @param  string $return_milestones returnMilestones (optional, default to false)
+     * @param  string $return_pod Return Proof of Delivery (optional, default to false)
+     *
+     * @throws \UPS\Tracking\ApiException on non-2xx response
+     * @throws \InvalidArgumentException
+     * @return \UPS\Tracking\Tracking\TrackApiResponse
+     */
+    public function getSingleTrackResponseByReferenceUsingGET($inquiry_number, $trans_id, $transaction_src, $locale = 'en_US', $return_signature = 'false', $return_milestones = 'false', $return_pod = 'false')
+    {
+        list($response) = $this->getSingleTrackResponseByReferenceUsingGETWithHttpInfo($inquiry_number, $trans_id, $transaction_src, $locale, $return_signature, $return_milestones, $return_pod);
+        return $response;
+    }
+
+    /**
+     * Operation getSingleTrackResponseByReferenceUsingGETWithHttpInfo
+     *
+     * Tracking by Reference Number
+     *
+     * @param  string $inquiry_number The reference number for which tracking information is requested. Each inquiry number must be between 7 and 34 characters in length. (required)
+     * @param  string $trans_id An identifier unique to the request. (required)
+     * @param  string $transaction_src Identifies the client/source application that is calling (required)
+     * @param  string $locale Language and country code of the user, separated by an underscore. Default value is 'en_US' (optional, default to en_US)
+     * @param  string $return_signature Indicator requesting that the delivery signature image be included as part of the response (by default the image will not be returned). Returns image bytecodes of the signature. (optional, default to false)
+     * @param  string $return_milestones returnMilestones (optional, default to false)
+     * @param  string $return_pod Return Proof of Delivery (optional, default to false)
+     *
+     * @throws \UPS\Tracking\ApiException on non-2xx response
+     * @throws \InvalidArgumentException
+     * @return array of \UPS\Tracking\Tracking\TrackApiResponse, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function getSingleTrackResponseByReferenceUsingGETWithHttpInfo($inquiry_number, $trans_id, $transaction_src, $locale = 'en_US', $return_signature = 'false', $return_milestones = 'false', $return_pod = 'false')
+    {
+        $returnType = '\UPS\Tracking\Tracking\TrackApiResponse';
+        $request = $this->getSingleTrackResponseByReferenceUsingGETRequest($inquiry_number, $trans_id, $transaction_src, $locale, $return_signature, $return_milestones, $return_pod);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    $e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+            if ($statusCode < 200 || $statusCode > 299) {
+                throw new ApiException(
+                    sprintf(
+                        '[%d] Error connecting to the API (%s)',
+                        $statusCode,
+                        $request->getUri()
+                    ),
+                    $statusCode,
+                    $response->getHeaders(),
+                    $response->getBody()
+                );
+            }
+
+            $responseBody = $response->getBody();
+            if ($returnType === '\SplFileObject') {
+                $content = $responseBody; //stream goes to serializer
+            } else {
+                $content = $responseBody->getContents();
+                if (!in_array($returnType, ['string', 'integer', 'bool'])) {
+                    $content = json_decode($content);
+                }
+            }
+
+            return [
+                ObjectSerializer::deserialize($content, $returnType, []),
+                $response->getStatusCode(),
+                $response->getHeaders()
+            ];
+
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 200:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\UPS\Tracking\Tracking\TrackApiResponse',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+                case 400:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\UPS\Tracking\Tracking\TrackApiResponse',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+                case 403:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\UPS\Tracking\Tracking\TrackApiResponse',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+                case 404:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\UPS\Tracking\Tracking\TrackApiResponse',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+                case 500:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\UPS\Tracking\Tracking\TrackApiResponse',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+                case 503:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\UPS\Tracking\Tracking\TrackApiResponse',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    break;
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Operation getSingleTrackResponseByReferenceUsingGETAsync
+     *
+     * Tracking by Reference Number
+     *
+     * @param  string $inquiry_number The reference number for which tracking information is requested. Each inquiry number must be between 7 and 34 characters in length. (required)
+     * @param  string $trans_id An identifier unique to the request. (required)
+     * @param  string $transaction_src Identifies the client/source application that is calling (required)
+     * @param  string $locale Language and country code of the user, separated by an underscore. Default value is 'en_US' (optional, default to en_US)
+     * @param  string $return_signature Indicator requesting that the delivery signature image be included as part of the response (by default the image will not be returned). Returns image bytecodes of the signature. (optional, default to false)
+     * @param  string $return_milestones returnMilestones (optional, default to false)
+     * @param  string $return_pod Return Proof of Delivery (optional, default to false)
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Promise\PromiseInterface
+     */
+    public function getSingleTrackResponseByReferenceUsingGETAsync($inquiry_number, $trans_id, $transaction_src, $locale = 'en_US', $return_signature = 'false', $return_milestones = 'false', $return_pod = 'false')
+    {
+        return $this->getSingleTrackResponseByReferenceUsingGETAsyncWithHttpInfo($inquiry_number, $trans_id, $transaction_src, $locale, $return_signature, $return_milestones, $return_pod)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation getSingleTrackResponseByReferenceUsingGETAsyncWithHttpInfo
+     *
+     * Tracking by Reference Number
+     *
+     * @param  string $inquiry_number The reference number for which tracking information is requested. Each inquiry number must be between 7 and 34 characters in length. (required)
+     * @param  string $trans_id An identifier unique to the request. (required)
+     * @param  string $transaction_src Identifies the client/source application that is calling (required)
+     * @param  string $locale Language and country code of the user, separated by an underscore. Default value is 'en_US' (optional, default to en_US)
+     * @param  string $return_signature Indicator requesting that the delivery signature image be included as part of the response (by default the image will not be returned). Returns image bytecodes of the signature. (optional, default to false)
+     * @param  string $return_milestones returnMilestones (optional, default to false)
+     * @param  string $return_pod Return Proof of Delivery (optional, default to false)
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Promise\PromiseInterface
+     */
+    public function getSingleTrackResponseByReferenceUsingGETAsyncWithHttpInfo($inquiry_number, $trans_id, $transaction_src, $locale = 'en_US', $return_signature = 'false', $return_milestones = 'false', $return_pod = 'false')
+    {
+        $returnType = '\UPS\Tracking\Tracking\TrackApiResponse';
+        $request = $this->getSingleTrackResponseByReferenceUsingGETRequest($inquiry_number, $trans_id, $transaction_src, $locale, $return_signature, $return_milestones, $return_pod);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    $responseBody = $response->getBody();
+                    if ($returnType === '\SplFileObject') {
+                        $content = $responseBody; //stream goes to serializer
+                    } else {
+                        $content = $responseBody->getContents();
+                        if ($returnType !== 'string') {
+                            $content = json_decode($content);
+                        }
+                    }
+
+                    return [
+                        ObjectSerializer::deserialize($content, $returnType, []),
+                        $response->getStatusCode(),
+                        $response->getHeaders()
+                    ];
+                },
+                function ($exception) {
+                    $response = method_exists($exception, 'getResponse') ? $exception->getResponse() : null;
+                    if ($response) {
+                        $statusCode = $response->getStatusCode();
+                        throw new ApiException(
+                            sprintf(
+                                '[%d] Error connecting to the API (%s)',
+                                $statusCode,
+                                method_exists($exception, 'getRequest') && $exception->getRequest() ? $exception->getRequest()->getUri() : ''
+                            ),
+                            $statusCode,
+                            $response->getHeaders(),
+                            $response->getBody()
+                        );
+                    }
+                    throw new ApiException(
+                        $exception->getMessage(),
+                        (int) $exception->getCode(),
+                        null,
+                        null
+                    );
+                }
+            );
+    }
+
+    /**
+     * Create request for operation 'getSingleTrackResponseByReferenceUsingGET'
+     *
+     * @param  string $inquiry_number The reference number for which tracking information is requested. Each inquiry number must be between 7 and 34 characters in length. (required)
+     * @param  string $trans_id An identifier unique to the request. (required)
+     * @param  string $transaction_src Identifies the client/source application that is calling (required)
+     * @param  string $locale Language and country code of the user, separated by an underscore. Default value is 'en_US' (optional, default to en_US)
+     * @param  string $return_signature Indicator requesting that the delivery signature image be included as part of the response (by default the image will not be returned). Returns image bytecodes of the signature. (optional, default to false)
+     * @param  string $return_milestones returnMilestones (optional, default to false)
+     * @param  string $return_pod Return Proof of Delivery (optional, default to false)
+     *
+     * @throws \InvalidArgumentException
+     * @return \GuzzleHttp\Psr7\Request
+     */
+    public function getSingleTrackResponseByReferenceUsingGETRequest($inquiry_number, $trans_id, $transaction_src, $locale = 'en_US', $return_signature = 'false', $return_milestones = 'false', $return_pod = 'false')
+    {
+        // verify the required parameter 'inquiry_number' is set
+        if ($inquiry_number === null || (is_array($inquiry_number) && count($inquiry_number) === 0)) {
+            throw new \InvalidArgumentException(
+                'Missing the required parameter $inquiry_number when calling getSingleTrackResponseByReferenceUsingGET'
+            );
+        }
+        // verify the required parameter 'trans_id' is set
+        if ($trans_id === null || (is_array($trans_id) && count($trans_id) === 0)) {
+            throw new \InvalidArgumentException(
+                'Missing the required parameter $trans_id when calling getSingleTrackResponseByReferenceUsingGET'
+            );
+        }
+        // verify the required parameter 'transaction_src' is set
+        if ($transaction_src === null || (is_array($transaction_src) && count($transaction_src) === 0)) {
+            throw new \InvalidArgumentException(
+                'Missing the required parameter $transaction_src when calling getSingleTrackResponseByReferenceUsingGET'
+            );
+        }
+
+        $resourcePath = '/track/v1/reference/details/{inquiryNumber}';
+        $formParams = [];
+        $queryParams = [];
+        $headerParams = [];
+        $httpBody = '';
+        $multipart = false;
+
+        // query params
+        if ($locale !== null) {
+            $queryParams['locale'] = ObjectSerializer::toQueryValue($locale, null);
+        }
+        // query params
+        if ($return_signature !== null) {
+            $queryParams['returnSignature'] = ObjectSerializer::toQueryValue($return_signature, null);
+        }
+        // query params
+        if ($return_milestones !== null) {
+            $queryParams['returnMilestones'] = ObjectSerializer::toQueryValue($return_milestones, null);
+        }
+        // query params
+        if ($return_pod !== null) {
+            $queryParams['returnPOD'] = ObjectSerializer::toQueryValue($return_pod, null);
+        }
+        // header params
+        if ($trans_id !== null) {
+            $headerParams['transId'] = ObjectSerializer::toHeaderValue($trans_id);
+        }
+        // header params
+        if ($transaction_src !== null) {
+            $headerParams['transactionSrc'] = ObjectSerializer::toHeaderValue($transaction_src);
+        }
+
+        // path params
+        if ($inquiry_number !== null) {
+            $resourcePath = str_replace(
+                '{' . 'inquiryNumber' . '}',
+                ObjectSerializer::toPathValue($inquiry_number),
+                $resourcePath
+            );
+        }
+
+        // body params
+        $_tempBody = null;
+
+        if ($multipart) {
+            $headers = $this->headerSelector->selectHeadersForMultipart(
+                ['application/json']
+            );
+        } else {
+            $headers = $this->headerSelector->selectHeaders(
+                ['application/json'],
+                []
+            );
+        }
+
+        // for model (json/xml)
+        if (isset($_tempBody)) {
+            // $_tempBody is the method argument, if present
+            $httpBody = $_tempBody;
+            if ($httpBody instanceof \stdClass && $headers['Content-Type'] === 'application/json') {
+                $httpBody = \GuzzleHttp\json_encode($httpBody);
+            }
+            if (is_array($httpBody) && $headers['Content-Type'] === 'application/json') {
+                $httpBody = \GuzzleHttp\json_encode(ObjectSerializer::sanitizeForSerialization($httpBody));
             }
         } elseif (count($formParams) > 0) {
             if ($multipart) {
@@ -670,17 +1060,25 @@ class TrackingApi
                     ];
                 },
                 function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
+                    $response = method_exists($exception, 'getResponse') ? $exception->getResponse() : null;
+                    if ($response) {
+                        $statusCode = $response->getStatusCode();
+                        throw new ApiException(
+                            sprintf(
+                                '[%d] Error connecting to the API (%s)',
+                                $statusCode,
+                                method_exists($exception, 'getRequest') && $exception->getRequest() ? $exception->getRequest()->getUri() : ''
+                            ),
                             $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        $response->getBody()
+                            $response->getHeaders(),
+                            $response->getBody()
+                        );
+                    }
+                    throw new ApiException(
+                        $exception->getMessage(),
+                        (int) $exception->getCode(),
+                        null,
+                        null
                     );
                 }
             );
@@ -700,7 +1098,7 @@ class TrackingApi
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Psr7\Request
      */
-    protected function referenceTrackingAPIRequest($reference_number, $trans_id, $transaction_src, $locale = 'en_US', $from_pick_up_date = 'currentDate-14', $to_pick_up_date = 'currentDate', $ref_num_type = 'SmallPackage. Valid values: SmallPackage, fgv')
+    public function referenceTrackingAPIRequest($reference_number, $trans_id, $transaction_src, $locale = 'en_US', $from_pick_up_date = 'currentDate-14', $to_pick_up_date = 'currentDate', $ref_num_type = 'SmallPackage. Valid values: SmallPackage, fgv')
     {
         // verify the required parameter 'reference_number' is set
         if ($reference_number === null || (is_array($reference_number) && count($reference_number) === 0)) {

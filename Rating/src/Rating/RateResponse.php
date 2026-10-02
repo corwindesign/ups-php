@@ -58,7 +58,7 @@ class RateResponse implements ModelInterface, ArrayAccess
       */
     protected static $swaggerTypes = [
         'response' => '\UPS\Rating\Rating\RateResponseResponse',
-        'rated_shipment' => '\UPS\Rating\Rating\RateResponseRatedShipment'
+        'rated_shipment' => '\UPS\Rating\Rating\RateResponseRatedShipment[]'
     ];
 
     /**
@@ -246,6 +246,23 @@ class RateResponse implements ModelInterface, ArrayAccess
     public function getRatedShipment()
     {
         return $this->container['rated_shipment'];
+    }
+
+    /**
+     * Gets rated_shipment normalized as an array of RateResponseRatedShipment
+     *
+     * @return \UPS\Rating\Rating\RateResponseRatedShipment[]
+     */
+    public function getRatedShipments(): array
+    {
+        $shipments = $this->container['rated_shipment'];
+        if ($shipments === null) {
+            return [];
+        }
+        if (is_array($shipments)) {
+            return $shipments;
+        }
+        return [$shipments];
     }
 
     /**

@@ -247,8 +247,14 @@ class ObjectSerializer
         } elseif (strcasecmp(substr($class, -2), '[]') === 0) {
             $subClass = substr($class, 0, -2);
             $values = [];
-            foreach ($data as $key => $value) {
-                $values[] = self::deserialize($value, $subClass, null);
+            if (is_object($data) && !($data instanceof \Traversable)) {
+                $values[] = self::deserialize($data, $subClass, null);
+            } elseif (is_array($data) && count($data) > 0 && !array_key_exists(0, $data)) {
+                $values[] = self::deserialize($data, $subClass, null);
+            } else {
+                foreach ($data as $key => $value) {
+                    $values[] = self::deserialize($value, $subClass, null);
+                }
             }
             return $values;
         } elseif ($class === 'object') {
