@@ -1,6 +1,6 @@
 {
-    "name": "abantecart/ups-php",
-    "description": "UPS PHP SDK based on OAuth",
+    "name": "corwindesign/ups-php",
+    "description": "UPS PHP SDK based on OAuth (Corwin Design Fork)",
     "keywords": [
         "ups",
         "api",
@@ -11,7 +11,7 @@
         "rest",
         "web service"
     ],
-    "homepage": "https://www.abantecart.com",
+    "homepage": "https://github.com/corwindesign/ups-php",
     "license": "MIT",
     "authors": [
         {
@@ -21,33 +21,55 @@
         {
             "name": "AbanteCart Team",
             "email": "help@abantecart.com"
+        },
+        {
+            "name": "Corwin Design",
+            "email": "github@supcoop.com"
         }
     ],
-    "config": {
-        "allow-plugins": {
-            "wikimedia/composer-merge-plugin": true
-        }
-    },
     "require": {
-        "php": "^7.4 || ^8.0",
+        "php": "^8.2 || ^8.3 || ^8.4 || ^8.5",
         "ext-curl": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "wikimedia/composer-merge-plugin": "^2.1.0",
         "guzzlehttp/guzzle": "^7.3",
         "guzzlehttp/psr7": "^1.7 || ^2.0"
     },
-    "extra": {
-        "merge-plugin": {
-            "include": [
-                "*/composer.json",
-                "OAuthClientCredentials/composer.json",
-                "Rating/composer.json",
-                "vendor/abantecart/ups-php/*/composer.json"
-            ],
-            "recurse": true,
-            "replace": false,
-            "merge-extra": false
+    "require-dev": {
+        "phpunit/phpunit": "^9.5 || ^10.0 || ^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "UPS\\AddressValidation\\": "AddressValidation/src/",
+            "UPS\\DangerousGoods\\": "DangerousGoods/src/",
+            "UPS\\DeliveryDefense\\": "DeliveryDefense/src/",
+            "UPS\\DeliveryIntercept\\": "DeliveryIntercept/src/",
+            "UPS\\GlobalCheckout\\": "GlobalCheckout/src/",
+            "UPS\\LandedCost\\": "LandedCost/src/",
+            "UPS\\Locator\\": "Locator/src/",
+            "UPS\\OAuthAuthCode\\": "OAuthAuthCode/src/",
+            "UPS\\OAuthClientCredentials\\": "OAuthClientCredentials/src/",
+            "UPS\\Paperless\\": "Paperless/src/",
+            "UPS\\Pickup\\": "Pickup/src/",
+            "UPS\\PreNotification\\": "PreNotification/src/",
+            "UPS\\QuantumView\\": "QuantumView/src/",
+            "UPS\\Rating\\": "Rating/src/",
+            "UPS\\Shipping\\": "Shipping/src/",
+            "UPS\\TForceFreightPickup\\": "TForceFreightPickup/src/",
+            "UPS\\TForceFreightPickupCancel\\": "TForceFreightPickupCancel/src/",
+            "UPS\\TForceFreightRating\\": "TForceFreightRating/src/",
+            "UPS\\TForceFreightShipping\\": "TForceFreightShipping/src/",
+            "UPS\\TimeInTransit\\": "TimeInTransit/src/",
+            "UPS\\Tracking\\": "Tracking/src/",
+            "UPS\\UPSTrackAlert\\": "UPSTrackAlert/src/",
+            "UPS\\UPSTrackAlertEnhanced\\": "UPSTrackAlertEnhanced/src/",
+            "UPS\\WorldEaseShipmentManagement\\": "WorldEaseShipmentManagement/src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "UPS\\Rating\\Test\\": "Rating/test/",
+            "UPS\\Tracking\\Test\\": "Tracking/test/"
         }
     }
 }

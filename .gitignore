@@ -1,8 +1,5 @@
-/.idea/
-/.swagger-codegen/
-/vendor/
-/composer.lock
-/build.php
-!/.idea/
-!/.swagger-codegen/
-/.swagger-codegen/VERSION
+vendor/
+composer.lock
+.phpunit.result.cache
+.phpunit.cache/
+.DS_Store
